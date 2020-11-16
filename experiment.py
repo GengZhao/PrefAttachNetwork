@@ -15,6 +15,7 @@ pan_plain = PAN(m=5)
 pan_beta = PAN(m=5, fgen=Beta(1,10))
 pan_plain.grow_to_size(100000)
 pan_beta.grow_to_size(100000)
+xyz=1
 
 # Degree distribution for beta fitnesses vs flat fitness
 plt.hist(np.log(pan_plain.degs), bins=50, alpha=0.8, normed=True)
