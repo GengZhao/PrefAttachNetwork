@@ -16,13 +16,15 @@ class PAN(object):
         m: degree for each new node
         fgen: fitness distribution
         capacity(optional): hint for size
+        edges: edges[i] is the list of m vertices that vertex m 
+                attached to when it was created.
         '''
         self.capacity = capacity
         self.m = m
         self.degs = np.array([m], dtype='int32')        # degrees
         self.fgen = fgen
         self.fs = np.array([fgen()], dtype='float32')   # fitnesses
-        # self.edges = [[0] * m]                          # edges w/ multiplicity TODO: don't think this is necessary, hard to optimize for performance reason
+        self.edges = [[0] * m]                          # edges w/ multiplicity
         self.size = 1                                   # n nodes
         self.tot_edges = m                              # n edges
         self.weights = self.fs * self.degs
@@ -42,11 +44,11 @@ class PAN(object):
         if size == self.capacity:
             self._resize(self.capacity * 2)
         endpoints = np.random.choice(range(size), m, replace=True, p=self.weights[:size]/self.tot_weights)
-        # self.edges.append(endpoints)    # new edges
+        self.edges.append(endpoints)    # new edges
         new_fit = self.fgen()                   # new fitness
         self.fs[size] = new_fit
         self.degs[size] = m                     # deg for new node
-        np.add.at(self.degs, endpoints, 1)      # update endpoints TODO: this isn't strictly correct
+        np.add.at(self.degs, endpoints, 1)      # update the degrees (with multiplicity for multi-edges)
         self.weights[size] = m * new_fit
         endpoints_fit = self.fs[endpoints]
         np.add.at(self.weights, endpoints, endpoints_fit)
@@ -58,6 +60,29 @@ class PAN(object):
         if size > self.capacity: self._resize(size)
         while (self.size < size):
             self.add_node()
+            if self.size %1000 == 0:
+                print('Current size of moodel is: '+str(self.size))
+
+    def catchuptime(self,i,j):
+        """ if i>j and fitness[i] > fitness[j], this return the smallest time T such that at time T, deg[i]>=deg[j].
+        If no such time T exists in the current graph, return False. If the conditions for i and j are not met, 
+        return None."""
+        if i<=j or self.fs[i] <= self.fitness[j]:
+            return None
+        time = j
+        deg_i = 0
+        deg_j = m
+        while time < self.size and deg_i < deg_j:
+            time += 1
+            for elem in self.edges[time]:
+                if elem == i:
+                    deg_i += 1
+                elif elem == j:
+                    deg_j += 1
+        if deg_i < deg_j:
+            return False
+        else:
+            return time
 
 if __name__ == '__main__':
     pan = PAN()
