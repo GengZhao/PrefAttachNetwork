@@ -67,18 +67,18 @@ class PAN(object):
         """ if i>j and fitness[i] > fitness[j], this return the smallest time T such that at time T, deg[i]>=deg[j].
         If no such time T exists in the current graph, return False. If the conditions for i and j are not met, 
         return None."""
-        if i<=j or self.fs[i] <= self.fitness[j]:
+        if i<=j or self.fs[i] <= self.fs[j] or self.degs[i] < self.degs[j]:
             return None
-        time = j
+        time = j + 1
         deg_i = 0
-        deg_j = m
+        deg_j = self.m
         while time < self.size and deg_i < deg_j:
-            time += 1
             for elem in self.edges[time]:
                 if elem == i:
                     deg_i += 1
                 elif elem == j:
                     deg_j += 1
+            time += 1
         if deg_i < deg_j:
             return False
         else:

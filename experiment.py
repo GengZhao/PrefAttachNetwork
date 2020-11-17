@@ -8,7 +8,7 @@ FINAL_SIZE_1 = 20000
 FINAL_SIZE_2 = 20000
 FINAL_SIZE_3 = 20000
 FINAL_SIZE_4 = 20000
-NUM_SAMPLES_CATCHUP_TIME = 100
+NUM_SAMPLES_CATCHUP_TIME = 2000
 
 plt.rc('xtick', labelsize=13)
 plt.rc('ytick', labelsize=13)
@@ -75,12 +75,13 @@ elif my_experiment == 'C':
 		pan = PAN(m=5, fgen=Beta(1,10))
 		pan.grow_to_size(FINAL_SIZE_4)
 
-	if str(input('Number of samples for the catchup time = 100. OK? ("Y" for yes)\n')) != 'Y':
-		NUM_SAMPLES_CATCHUP_TIME = int(input('How many samples?\n'))
-
 	predictions = []
 	catchuptimes = []
 
+	if str(input('Number of samples for the catchup time = 2000. OK? ("Y" for yes)\n')) != 'Y':
+		NUM_SAMPLES_CATCHUP_TIME = int(input('How many samples?\n'))
+
+	'''
 	for _ in range(NUM_SAMPLES_CATCHUP_TIME):
 
 		# TO DO THIS!
@@ -91,7 +92,23 @@ elif my_experiment == 'C':
 		catchuptimes.append(cutime)
 
 	pass 
+	'''
 
+	for i in range(200):
+		for j in range(i+1, 200):
+			cutime = pan.catchuptime(j, i)
+			if cutime:
+				predictions.append(np.power((j+1.0) / (i+1.0), 1 / (pan.fs[j] / pan.fs[i])) * (i+1) - 1 + i)
+				catchuptimes.append(cutime)
+				if len(predictions) == NUM_SAMPLES_CATCHUP_TIME: break
+		if len(predictions) == NUM_SAMPLES_CATCHUP_TIME: break
+
+	plt.plot(predictions, catchuptimes, ls='', marker='.', alpha=0.25)
+	plt.plot(range(int(max(predictions))), range(int(max(predictions))), ls=':')
+	plt.xlabel('predicted')
+	plt.ylabel('observed')
+	plt.yscale('log')
+	plt.show()
 
 
 
