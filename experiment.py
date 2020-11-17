@@ -66,31 +66,64 @@ elif my_experiment == 'C':
 		max_fit = int(input("Fitness will be chosen uniformly from {1, 2, ..., n}. What is your n? (max 10)\n"))
 		pan = PAN(m=5, fgen=Choice(range(1,max_fit+1,1)))
 		pan.grow_to_size(FINAL_SIZE_4)
+		distribution_info = distribution+" ("+str(max_fit)+")"
 
 	elif distribution == 'constant':
 		pan = PAN(m=5)
 		pan.grow_to_size(FINAL_SIZE_4)
+		distribution_info = distribution
+		# NOTE: DON'T CHOOSE CONSTANT! There are no valid pairs in constant model. 
 
 	elif distribution == 'beta':
 		pan = PAN(m=5, fgen=Beta(1,10))
 		pan.grow_to_size(FINAL_SIZE_4)
+		distribution_info = distribution
 
 	if str(input('Number of samples for the catchup time = 100. OK? ("Y" for yes)\n')) != 'Y':
 		NUM_SAMPLES_CATCHUP_TIME = int(input('How many samples?\n'))
 
 	predictions = []
-	catchuptimes = []
+	i_s = []
+	j_s = []
 
 	for _ in range(NUM_SAMPLES_CATCHUP_TIME):
 
-		# TO DO THIS!
-		pred=0
-		cutime=0
+		j = np.random.randint(0, pan.size-1)
+		i = np.random.randint(j+1, pan.size)
 
+		while pan.fs[i] <= pan.fs[j]:
+			j = np.random.randint(0, pan.size-1)
+			i = np.random.randint(j+1, pan.size)
+
+		i_s.append(i)
+		j_s.append(j)
+
+
+	if not pan.is_it_valid(i_s, j_s):
+		print('ERROR! the (i_s, j_s) do not form valid pairs')
+
+	for k in range(NUM_SAMPLES_CATCHUP_TIME):
+		i = i_s[k]
+		j = j_s[k]
+		alpha = i/j
+		beta = pan.fs[i]/pan.fs[j]
+		pred = i*np.power(alpha, 1/(beta-1))
+		if pred > pan.size:
+			pred = pan.size+1
 		predictions.append(pred)
-		catchuptimes.append(cutime)
 
-	pass 
+	catchuptimes = pan.catchuptimes(i_s,j_s)
+	for idx in range(len(catchuptimes)):
+		if catchuptimes[idx] == None:
+			# When they never catch-up, artificially set the catchup times to the size+1.
+			catchuptimes[idx] = pan.size+1 
+
+	plt.scatter(catchuptimes, predictions, marker='x')
+	plt.ylabel("Math predictions (if > size, then they're set to size+1")
+	plt.xlabel("Actual catch-up times (if never, then they're set to size+1)")
+	plt.title('Catch-up times of '+str(NUM_SAMPLES_CATCHUP_TIME)+' random valid pairs. \n Model = '+distribution_info+', size = '+str(pan.size))
+	plt.legend()
+	plt.show()
 
 
 

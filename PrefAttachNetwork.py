@@ -61,28 +61,60 @@ class PAN(object):
         while (self.size < size):
             self.add_node()
             if self.size %1000 == 0:
-                print('Current size of moodel is: '+str(self.size))
+                print('Current size of model is: '+str(self.size))
 
-    def catchuptime(self,i,j):
-        """ if i>j and fitness[i] > fitness[j], this return the smallest time T such that at time T, deg[i]>=deg[j].
-        If no such time T exists in the current graph, return False. If the conditions for i and j are not met, 
-        return None."""
-        if i<=j or self.fs[i] <= self.fitness[j]:
-            return None
-        time = j
-        deg_i = 0
-        deg_j = m
-        while time < self.size and deg_i < deg_j:
-            time += 1
-            for elem in self.edges[time]:
-                if elem == i:
-                    deg_i += 1
-                elif elem == j:
-                    deg_j += 1
-        if deg_i < deg_j:
+    def is_it_valid(self, i_s, j_s):
+        """ A pair (i,j) is valid if i>j and fitness[i]>fitness[j], i.e. if we can compute the catchup times. 
+        Given an array of i's and an array of j's, this returns False if some pair i_s[n] and j_s[n] isn't valid."""
+        if len(i_s) != len(j_s):
             return False
-        else:
-            return time
+        for n in range(len(i_s)):
+            if i_s[n] <= j_s[n] or self.fs[i_s[n]] <= self.fs[j_s[n]]:
+                return False
+        return True
+
+    def catchuptimes(self,i_s,j_s):
+        """ Return an array where the n-th entry is the catchup time of i_s[n] to j_s[n]. This presupposes that 
+        the input is valid (see above function). If the pair doesn't catchup on time, we put None instead."""
+        n = len(i_s)
+        ans = [None]*n
+        deg_i = {}
+        for i in i_s:
+            deg_i[i] = 0
+        deg_j = {}
+        for j in j_s:
+            deg_j[j] = 0
+        time = -1
+        finished_pairs = 0
+
+        while time<self.size-1:
+            time += 1
+
+            if time in i_s:
+                deg_i[time] += self.m
+            if time in j_s:
+                deg_j[time] += self.m
+
+            for neighbour in self.edges[time]:
+                if neighbour != time: # don't count self-loops twice
+                    if neighbour in i_s:
+                        deg_i[neighbour] += 1
+                    if neighbour in j_s:
+                        deg_j[neighbour] += 1
+
+            # Check if our pairs have catched up.            
+            for k in range(n):
+                if ans[k] == None and time >= i_s[k] and deg_i[i_s[k]] >= deg_j[j_s[k]]:
+                    ans[k] = time
+                    finished_pairs += 1
+
+            if finished_pairs == n:
+                break
+
+            if time%1000==0:
+                print("At stage "+str(time)+"/"+str(self.size)+" of computing catch-up times.")
+
+        return ans 
 
 if __name__ == '__main__':
     pan = PAN()
